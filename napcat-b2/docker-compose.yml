@@ -1,9 +1,14 @@
-# NapCat × B2 备份式持久化
+# NapCat × B2 备份式持久化（开箱即用）
 #
 # 用法：
-#   1. cp .env.example .env 并填写（QQ 号、B2 凭据、镜像名）
+#   1. cp .env.example .env 并填写（QQ 号、B2 凭据）
 #   2. docker compose up -d
 # 首次启动后从日志获取 WebUI token：docker logs napcat | grep -i webui
+#
+# 内置备份调度（默认每日 04:00）：
+#   - 容器挂载 docker.sock 与数据根目录 /backup-data
+#   - 到点后镜像内调度器自动启动 sidecar 执行"停机 → rclone 同步 B2 → 重启"
+#   - 无需宿主机 cron / 无需手动配置
 services:
   napcat:
     build: .
@@ -23,6 +28,10 @@ services:
       - B2_APPLICATION_KEY=${B2_APPLICATION_KEY:-}
       - B2_BUCKET=${B2_BUCKET:-}
       - B2_PREFIX=${B2_PREFIX:-napcat}
+      # 内置备份调度（默认开启，每日 04:00）
+      - BACKUP_ENABLED=${BACKUP_ENABLED:-true}
+      - BACKUP_HOUR=${BACKUP_HOUR:-4}
+      - BACKUP_MINUTE=${BACKUP_MINUTE:-0}
     ports:
       - "${WEBUI_PORT:-6099}:6099"   # NapCat WebUI
       - "${HTTP_PORT:-3000}:3000"    # OneBot HTTP（按需）
@@ -31,3 +40,6 @@ services:
       - ${DATA_DIR:-./data}/config:/app/napcat/config
       - ${DATA_DIR:-./data}/QQ:/app/.config/QQ
       - ${DATA_DIR:-./data}/plugins:/app/plugins
+      # 内置备份所需：数据根目录（供 sidecar 只读同步）+ docker.sock（停机/重启）
+      - ${DATA_DIR:-./data}:/backup-data
+      - /var/run/docker.sock:/var/run/docker.sock
