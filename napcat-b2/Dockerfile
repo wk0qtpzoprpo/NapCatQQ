@@ -22,8 +22,8 @@ RUN set -eux; \
     rm -rf /tmp/rclone /tmp/rclone.zip; \
     rclone version | head -1
 
-# 编排脚本（B2 恢复 + 启动 NapCat）
-COPY entrypoint.sh restore.sh /opt/napcat-b2/
+# 编排脚本：入口（恢复+调度+启动）、备份（sidecar 内停机备份）、恢复、调度器
+COPY entrypoint.sh restore.sh backup.sh scheduler.sh /opt/napcat-b2/
 RUN chmod +x /opt/napcat-b2/*.sh
 
 # 数据卷（与官方镜像约定一致）
