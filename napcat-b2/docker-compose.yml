@@ -1,0 +1,33 @@
+# NapCat × B2 备份式持久化
+#
+# 用法：
+#   1. cp .env.example .env 并填写（QQ 号、B2 凭据、镜像名）
+#   2. docker compose up -d
+# 首次启动后从日志获取 WebUI token：docker logs napcat | grep -i webui
+services:
+  napcat:
+    build: .
+    image: ${IMAGE:-napcat-b2:latest}
+    container_name: ${CONTAINER_NAME:-napcat}
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - NAPCAT_UID=${NAPCAT_UID:-1000}
+      - NAPCAT_GID=${NAPCAT_GID:-1000}
+      - ACCOUNT=${ACCOUNT:-}
+      # OneBot 连接模式（可选：reverse_ws / reverse_http / astrbot / napcat）
+      - MODE=${MODE:-}
+      - ONEBOT_URL=${ONEBOT_URL:-}
+      # B2 恢复配置（空卷首启自动从 B2 拉取）
+      - B2_ACCOUNT_ID=${B2_ACCOUNT_ID:-}
+      - B2_APPLICATION_KEY=${B2_APPLICATION_KEY:-}
+      - B2_BUCKET=${B2_BUCKET:-}
+      - B2_PREFIX=${B2_PREFIX:-napcat}
+    ports:
+      - "${WEBUI_PORT:-6099}:6099"   # NapCat WebUI
+      - "${HTTP_PORT:-3000}:3000"    # OneBot HTTP（按需）
+      - "${WS_PORT:-3001}:3001"      # OneBot WebSocket（按需）
+    volumes:
+      - ${DATA_DIR:-./data}/config:/app/napcat/config
+      - ${DATA_DIR:-./data}/QQ:/app/.config/QQ
+      - ${DATA_DIR:-./data}/plugins:/app/plugins
